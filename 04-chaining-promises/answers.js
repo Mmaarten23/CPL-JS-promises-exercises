@@ -7,8 +7,10 @@
  */
 function flatMapPromise(promise, asyncTransformer) {
     return new Promise((resolve, reject) => {
-        promise
-            .then(/* IMPLEMENT ME! */);
+        promise.then(
+            (value) => resolve(asyncTransformer(value)),
+            (err) => reject(err)
+        );
     });
 }
 
@@ -20,7 +22,14 @@ function flatMapPromise(promise, asyncTransformer) {
  * @param {function} slowAsyncProcess
  */
 function chainTwoAsyncProcesses(firstPromise, slowAsyncProcess) {
-    return firstPromise.then(/* IMPLEMENT ME! */);
+    return firstPromise.then(
+        (value) => {
+            return slowAsyncProcess(value);
+        },
+        (err) => {
+            throw err;
+        }
+    );
 }
 
 /**
@@ -32,7 +41,20 @@ function chainTwoAsyncProcesses(firstPromise, slowAsyncProcess) {
  */
 function makeGetUserByIdWithOrganization(getUserById, getOrganizationById) {
     return function getUserByIdWithOrganization(userId) {
-        /* IMPLEMENT ME! */
+        return getUserById(userId).then(
+            (user) => {
+                if (!user) {
+                    return user;
+                }
+                let organizationId = user.organizationId
+                return getOrganizationById(organizationId).then(
+                    (org) => {
+                        user.organization = org;
+                        return user;
+                    }
+                )
+            }
+        )
     };
 }
 
@@ -49,7 +71,16 @@ function makeGetUserAndOrganizationById(getUserById, getOrganizationById) {
      * @param {string} organizationId
      */
     return function getUserByIdWithOrganization(userId, organizationId) {
-        /* IMPLEMENT ME! */
+        let userPromise = getUserById(userId);
+        let organizationPromise = getOrganizationById(organizationId);
+
+        return Promise.all([userPromise, organizationPromise]).then((values) => {
+            if (!values[0] || !values[1]) {
+                return undefined;
+            }
+            values[0].organization = values[1];
+            return values[0];
+        })
     };
 }
 
@@ -65,7 +96,24 @@ function makeGetUsersByIdWithOrganizations(getUserById, getOrganizationById) {
      * @param {Array<string>} userIds
      */
     return function getUserByIdWithOrganization(userIds) {
-        /* IMPLEMENT ME! */
+        let promises = [];
+        for (let i = 0; i < userIds.length; i++) {
+            promises[i] = getUserById(userIds[i]).then(
+                (user) => {
+                    if (!user) {
+                        return user;
+                    }
+                    let organizationId = user.organizationId
+                    return getOrganizationById(organizationId).then(
+                        (org) => {
+                            user.organization = org;
+                            return user;
+                        }
+                    )
+                }
+            )
+        }
+        return Promise.all(promises);
     };
 }
 
