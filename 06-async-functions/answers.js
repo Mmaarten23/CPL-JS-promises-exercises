@@ -5,7 +5,7 @@
  * @returns {Promise<3>}
  */
 async function makePromiseResolveWith3() {
-    /* IMPLEMENT ME! */
+    return Promise.resolve(3);
 }
 
 /**
@@ -15,7 +15,7 @@ async function makePromiseResolveWith3() {
  * @returns {Promise<,"Boo!">}
  */
 async function makePromiseRejectWithBoo() {
-    /* IMPLEMENT ME! */
+    return Promise.reject("Boo!")
 }
 
 /**
@@ -26,7 +26,8 @@ async function makePromiseRejectWithBoo() {
  * @param {function} slowAsyncProcess
  */
 async function chainTwoAsyncProcesses(firstPromise, slowAsyncProcess) {
-    /* IMPLEMENT ME! */
+    let firstValue = await firstPromise;
+    return await slowAsyncProcess(firstValue);
 }
 
 /**
@@ -41,7 +42,16 @@ function makeAsyncGetUserByIdWithOrganization(getUserById, getOrganizationById) 
      * @param {string} userId
      */
     return async function getUserByIdWithOrganization(userId) {
-        /* IMPLEMENT ME! */
+        let user = await getUserById(userId);
+        if (!user) {
+            return undefined;
+        }
+        let org = await getOrganizationById(user.organizationId);
+        if (!org) {
+            return undefined;
+        }
+        user.organization = org;
+        return user;
     };
 }
 
@@ -58,7 +68,16 @@ function makeAsyncGetUserAndOrganizationById(getUserById, getOrganizationById) {
      * @param {string} organizationId
      */
     return async function getUserByIdWithOrganization(userId, organizationId) {
-        /* IMPLEMENT ME! */
+        let userPromise = getUserById(userId);
+        let orgPromise = getOrganizationById(organizationId);
+
+        let user = await userPromise;
+        let org = await orgPromise;
+        if (!user || !org) {
+            return undefined;
+        }
+        user.organization = org;
+        return user;
     };
 }
 
@@ -74,7 +93,24 @@ function makeAsyncGetUsersByIdWithOrganizations(getUserById, getOrganizationById
      * @param {Array<string>} userIds
      */
     return async function getUserByIdWithOrganization(userIds) {
-        /* IMPLEMENT ME! */
+        let userPromises = [];
+        for (let i = 0; i < userIds.length; i++) {
+            userPromises[i] = getUserById(userIds[i]);
+        }
+        let users = await Promise.all(userPromises);
+        let orgPromises = [];
+        for (let i = 0; i < users.length; i++) {
+            if (users[i]) {
+                orgPromises[i] = getOrganizationById(users[i].organizationId);
+            }
+        }
+        let organizations = await Promise.all(orgPromises);
+        for (let i = 0; i < users.length; i++) {
+            if (users[i]) {
+                users[i].organization = organizations[i];
+            }
+        }
+        return users;
     };
 }
 
